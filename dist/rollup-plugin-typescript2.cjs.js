@@ -27396,9 +27396,9 @@ const typescript = (options) => {
             }
             return undefined;
         },
-        generateBundle(bundleOptions) {
+        generateBundle(bundleOptions, bundle) {
             self._ongenerate();
-            self._onwrite.call(this, bundleOptions);
+            self._onwrite.call(this, bundleOptions, bundle);
         },
         _ongenerate() {
             context.debug(() => `generating target ${generateRound + 1}`);
@@ -27422,7 +27422,7 @@ const typescript = (options) => {
             cache().done();
             generateRound++;
         },
-        _onwrite(_output) {
+        _onwrite(_output, bundle) {
             if (!parsedConfig.options.declaration)
                 return;
             lodash_3(parsedConfig.fileNames, (name) => {
@@ -27456,6 +27456,8 @@ const typescript = (options) => {
                 }
                 else {
                     const relativePath = path.relative(process.cwd(), fileName);
+                    if (bundle[relativePath])
+                        return;
                     context.debug(() => `${safe_5("emitting declarations")} for '${key}' to '${relativePath}'`);
                     this.emitFile({
                         type: "asset",

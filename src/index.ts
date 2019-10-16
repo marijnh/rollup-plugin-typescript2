@@ -16,7 +16,8 @@ import { relative } from "path";
 import { normalize } from "./normalize";
 import { satisfies } from "semver";
 import findCacheDir from "find-cache-dir";
-import { PluginImpl, PluginContext, InputOptions, OutputOptions, TransformSourceDescription, MinimalPluginContext } from "rollup";
+import { PluginImpl, PluginContext, InputOptions, OutputOptions, TransformSourceDescription,
+         MinimalPluginContext, OutputBundle } from "rollup";
 import { createFilter } from "./get-options-overrides";
 
 const typescript: PluginImpl<Partial<IOptions>> = (options) =>
@@ -269,10 +270,10 @@ const typescript: PluginImpl<Partial<IOptions>> = (options) =>
 			return undefined;
 		},
 
-		generateBundle(this: PluginContext, bundleOptions: OutputOptions): void
+		generateBundle(this: PluginContext, bundleOptions: OutputOptions, bundle: OutputBundle): void
 		{
 			self._ongenerate();
-			self._onwrite.call(this, bundleOptions);
+			self._onwrite.call(this, bundleOptions, bundle);
 		},
 
 		_ongenerate(): void
@@ -313,7 +314,7 @@ const typescript: PluginImpl<Partial<IOptions>> = (options) =>
 			generateRound++;
 		},
 
-		_onwrite(this: PluginContext, _output: OutputOptions): void
+		_onwrite(this: PluginContext, _output: OutputOptions, bundle: OutputBundle): void
 		{
 			if (!parsedConfig.options.declaration)
 				return;
@@ -356,8 +357,9 @@ const typescript: PluginImpl<Partial<IOptions>> = (options) =>
 					tsModule.sys.writeFile(fileName, entry.text, entry.writeByteOrderMark);
 				}
 				else
-                {
+				{
 					const relativePath = relative(process.cwd(), fileName);
+					if (bundle[relativePath]) return;
 					context.debug(() => `${blue("emitting declarations")} for '${key}' to '${relativePath}'`);
 					this.emitFile({
 						type: "asset",
